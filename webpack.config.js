@@ -48,9 +48,11 @@ module.exports = function (webpackEnv) {
       ],
     },
 
+
     resolve: {
       extensions: ['.tsx', '.ts', '.js', '.jsx'],
       modules: [path.join(__dirname, 'src'), 'node_modules'],
+      plugins: [new TsconfigPathsPlugin({ configFile: path.resolve(__dirname, 'tsconfig.json') })],
     },
 
     module: {
@@ -125,6 +127,17 @@ module.exports = function (webpackEnv) {
     },
 
     plugins: [
+      new ForkTsCheckerWebpackPlugin({
+        typescript: {
+          configFile: path.resolve(__dirname, 'tsconfig.json'),
+          diagnosticOptions: {
+            syntactic: true,
+            semantic: true,
+            declaration: isProd,
+            global: true,
+          },
+        },
+      }),
       new MiniCssExtractPlugin({
         filename: '[name].[contenthash].css',
         chunkFilename: '[id].[contenthash].css',
@@ -134,6 +147,11 @@ module.exports = function (webpackEnv) {
       }),
       new CleanWebpackPlugin(),
       new EsbuildPlugin(),
-    ],
+      isProd &&
+        new ESLintPlugin({
+          extensions: ['ts', 'tsx', 'js', 'jsx'],
+          exclude: ['/node_modules/', '/.idea/', '/.vscode/'],
+        }),
+    ].filter(Boolean),
   };
 };
