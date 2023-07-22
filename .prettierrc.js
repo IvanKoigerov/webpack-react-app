@@ -9,6 +9,6 @@ module.exports = {
   bracketSpacing: true,
   arrowParens: 'always',
   endOfLine: 'lf',
-  importOrder: ['^[~.]'],
+  importOrder: ['scss', 'css', '@app', '^[~.]'],
   importOrderSeparation: true,
 };
