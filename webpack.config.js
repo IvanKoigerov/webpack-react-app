@@ -25,9 +25,19 @@ module.exports = function (webpackEnv) {
 
   return {
     entry: path.join(__dirname, './src/index.tsx'),
+    mode: isProd ? 'production' : 'development',
+    cache: true,
 
     devServer: {
       port: PORT_DEV,
+      historyApiFallback: {
+        index: path.join(BASE_PATH, 'index.html'),
+      },
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': '*',
+        'Access-Control-Allow-Headers': '*',
+      },
       static: {
         directory: path.join(__dirname, 'public'),
       },
@@ -48,6 +58,9 @@ module.exports = function (webpackEnv) {
       ],
     },
 
+    watchOptions: {
+      ignored: /node_modules/,
+    },
 
     resolve: {
       extensions: ['.tsx', '.ts', '.js', '.jsx'],
@@ -117,12 +130,23 @@ module.exports = function (webpackEnv) {
 
     output: {
       path: path.resolve(__dirname, 'dist'),
-      filename: '[name].[contenthash].bundle.js',
+      filename: '[name].[contenthash].js',
       publicPath: BASE_PATH,
     },
     optimization: {
+      minimize: isProd,
+      minimizer: [new TerserPlugin(), new CssMinimizerPlugin()],
       splitChunks: {
         chunks: 'all',
+        cacheGroups: {
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name(module) {
+              const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/) ?? 'package';
+              return `npm.${packageName[1].replace('@', '')}`;
+            },
+          },
+        },
       },
     },
 
@@ -138,6 +162,7 @@ module.exports = function (webpackEnv) {
           },
         },
       }),
+      new Dotenv(),
       new MiniCssExtractPlugin({
         filename: '[name].[contenthash].css',
         chunkFilename: '[id].[contenthash].css',
@@ -147,6 +172,7 @@ module.exports = function (webpackEnv) {
       }),
       new CleanWebpackPlugin(),
       new EsbuildPlugin(),
+      isDev && new ReactRefreshPlugin(),
       isProd &&
         new ESLintPlugin({
           extensions: ['ts', 'tsx', 'js', 'jsx'],
