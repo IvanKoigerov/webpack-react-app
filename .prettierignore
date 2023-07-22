@@ -1,0 +1,9 @@
+# Build artifacts
+/node_modules
+/dist
+/out
+/src/types/**/*.json
+/src/types/**/*.yaml
+
+# CI code
+/jenkins
