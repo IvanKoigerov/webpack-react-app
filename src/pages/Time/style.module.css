@@ -1,0 +1,9 @@
+.time {
+  font-size: 20px;
+}
+
+.button {
+  background: tomato;
+  color: #f1f1f1;
+  border: 2px dashed #f1f1f1;
+}
