@@ -1,16 +1,23 @@
-const { ESBuildMinifyPlugin, EsbuildPlugin } = require('esbuild-loader');
+const { EsbuildPlugin } = require('esbuild-loader');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
-const webpack = require('webpack');
+const ReactRefreshPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
+const ESLintPlugin = require('eslint-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
+const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
+const Dotenv = require('dotenv-webpack');
 const path = require('path');
 
 const PORT_DEV = process.env.PORT_DEV ?? 3000;
 const BASE_PATH = process.env.BASE_PATH ? process.env.BASE_PATH : '/';
 const BACKEND_URL = process.env.BACKEND_URL ?? 'https://sut.web-bee.ru';
 
-console.log(process.env.PORT_DEV, process.env.BASE_PATH);
+console.info('PORT: ', process.env.PORT_DEV);
+console.info('BASE_PATH: ', process.env.BASE_PATH);
+console.info('BACKEND_URL: ', process.env.BACKEND_URL);
 
 module.exports = function (webpackEnv) {
   const isProd = webpackEnv === 'production';
@@ -29,7 +36,7 @@ module.exports = function (webpackEnv) {
         publicPath: BASE_PATH,
       },
       compress: true,
-      open: BASE_PATH,
+      open: false, // BASE_PATH
       hot: true,
       proxy: [
         {
@@ -48,6 +55,7 @@ module.exports = function (webpackEnv) {
 
     module: {
       rules: [
+        // сборка TypeScript
         {
           test: /\.(ts|tsx)?$/,
           loader: 'esbuild-loader',
@@ -59,10 +67,31 @@ module.exports = function (webpackEnv) {
           },
           exclude: /node_modules/,
         },
+
+        // Поддержка модульных импортов
+        {
+          test: /\.module.(sa|sc|c)ss$/,
+          use: [
+            isDev ? 'style-loader' : MiniCssExtractPlugin.loader,
+            {
+              loader: 'css-loader',
+              options: {
+                modules: true,
+              },
+            },
+            'postcss-loader',
+            'sass-loader',
+          ],
+        },
+
+        // Поддержка обычных импортов
         {
           test: /\.(sa|sc|c)ss$/,
           use: [isDev ? 'style-loader' : MiniCssExtractPlugin.loader, 'css-loader', 'postcss-loader', 'sass-loader'],
+          exclude: /\.module.(sa|sc|c)ss$/,
         },
+
+        // Поддержка SVG
         {
           test: /\.svg$/i,
           type: 'asset',
@@ -71,11 +100,13 @@ module.exports = function (webpackEnv) {
         {
           test: /\.svg$/i,
           issuer: /\.[jt]sx?$/,
-          resourceQuery: { not: [/url/] }, // exclude react component if *.svg?url
+          resourceQuery: { not: [/url/] },
           use: ['@svgr/webpack'],
         },
+
+        // Поддержка импортов шрифтов и картинок
         {
-          test: /\.(png|woff|woff2|eot|ttf|jpg|gif|webp)$/, // to import images and fonts
+          test: /\.(png|woff|woff2|eot|ttf|jpg|gif|webp)$/,
           loader: 'url-loader',
           options: { limit: 10000 },
         },
